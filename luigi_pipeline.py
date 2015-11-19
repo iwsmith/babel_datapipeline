@@ -1,34 +1,26 @@
 # In order to run with luigi command, this folder must be added to sys.path
 
-import aminer as am
-import bibcouple as bib
-import cocitation as cocite
-import ef
 import luigi
 import luigi.s3 as s3
 
+import parsers.aminer as am
+import recommenders.bibcouple as bib
+import recommenders.cocitation as cocite
+
 class LocalTargetInputs(luigi.ExternalTask):
     def output(self):
-        return luigi.file.LocalTarget(path='targets/aminer_single.txt')
+        return luigi.file.LocalTarget(path='local_raw_targets/aminer.paper')
 
 class AminerS3Targets(luigi.Task):
     def output(self):
-        aws_id, key = '', ''
-        for line in open('~/.boto', 'r'):
-            parts = line.split(' = ')
-            if parts[0] == 'aws_access_key_id':
-                aws_id = parts[1]
-            elif parts[0] == 'aws_secret_access_key':
-                key = parts[1]
-        s3client = s3.S3Client(aws_access_key_id=aws_id,
-                               aws_secret_access_key=key)
-        return s3.S3Target(path='citation-databases/Aminer/raw/aminer.paper.gz', client=s3client)
+        s3client = s3.S3Client()
+        return s3.S3Target(path='/citation-databases/Aminer/raw/aminer.paper.gz', client=s3client)
 
 class AMinerParse(luigi.Task):
     date = luigi.DateParameter()
 
     def requires(self):
-        return LocalTargetInputs()
+        return AminerS3Targets()
 
     def output(self):
         return luigi.LocalTarget(path='citation_dict/aminer_parse_%s.txt' % self.date)
@@ -53,13 +45,8 @@ class CocitationTask(luigi.Task):
     def run(self):
         with self.output().open('w') as outfile:
             with self.input().open('r') as infile:
-                distinct = set()
-                for line in infile:
-                    paperIDs = line.split(' ')
-                    distinct.add(paperIDs[0])
-                    distinct.add(paperIDs[1])
-                dim = len(distinct)
-                outfile = cocite.main(dim, self.input(), self.output())
+                dim = countPapers(infile)
+                outfile = cocite.main(dim, infile, outfile, delimiter=' ')
 
 class BibcoupleTask(luigi.Task):
     date = luigi.DateParameter()
@@ -73,40 +60,36 @@ class BibcoupleTask(luigi.Task):
     def run(self):
         with self.output().open('w') as outfile:
             with self.input().open('r') as infile:
-                distinct = set()
-                for line in infile:
-                    paperIDs = line.split(' ')
-                    distinct.add(paperIDs[0])
-                    distinct.add(paperIDs[1])
-                dim = len(distinct)
-                outfile = bib.main(dim, self.input(), self.output())
+                dim = countPapers(infile)
+                outfile = bib.main(dim, self.input(), outfile, delimiter=' ')
 
-class EFnxTask(luigi.task):
-    #need to make ef_nx write to a file
+### neeed to fix ef_nx so that it works properly in this context.
+### Getting a lot of bugs still
+# class EFnxTask(luigi.task):
+#     #need to make ef_nx write to a file
+#
+#     date = luigi.DateParameter()
+#
+#     def requires(self):
+#         return AMinerParse(date = self.date)
+#
+#     def output(self):
+#         return luigi.LocalTarget(path='recs/ef_nx%s.txt' % self.date)
+#
+#     def run(self):
+#         from ef_nx import EFExpert
+#         with self.output().open('w') as outfile:
+#             with self.input().open('r') as infile:
+#                 ef = EFExpert(None)
+#                 ef.converter(infile)
+#                 ef.recommend('''paperID''')
 
-    date = luigi.DateParameter()
-
-    def requires(self):
-        return AMinerParse(date = self.date)
-
-    def output(self):
-        return luigi.LocalTarget(path='recs/ef_nx%s.txt' % self.date)
-
-    def run(self):
-        from ef_nx import EFExpert
-        with self.output().open('w') as outfile:
-            with self.input().open('r') as infile:
-                ef = EFExpert(None)
-                ef.converter(infile)
-                ef.recommend('''paperID''')
-
-class EFTask(luigi.task):
-    date = luigi.DateParameter()
-
-    def requires(self):
-        return AMinerParse(date = self.date)
-
-    def output(self):
-        return
+def countPapers(infile):
+    distinct = set()
+    for line in infile:
+        paperIDs = line.split(' ')
+        distinct.add(paperIDs[0])
+        distinct.add(paperIDs[1])
+    return len(distinct)
 
 

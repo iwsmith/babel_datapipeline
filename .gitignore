@@ -55,3 +55,10 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# luigi
+*.txt
+
+#PyCharm
+.DS_Store
+.idea

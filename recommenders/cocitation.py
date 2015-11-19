@@ -10,25 +10,28 @@ def get_next_id():
     current_idx += 1
     return current_idx - 1
 
-def main(dimension, infile, outfile, delimiter=None, numRecs=10):
+def main(dimension, infile, outfile, delimiter='\t', numRecs=10):
     from collections import defaultdict
     import itertools
     from scipy.sparse import dok_matrix
     import numpy as np
 
-    infile = open(infile, 'r')
-    outfile = open(outfile, 'w')
+    # outfile = open(outfile, 'w')
+    # infile = open(infile, 'r')
 
     S = dok_matrix((dimension, dimension), dtype=np.uint8)
     paper_ids = defaultdict(get_next_id)
-
+    
     reader = itertools.imap(lambda x: map(str.strip, x.split(delimiter)), infile)
 
-    for paper, cites in reader:
-        S[paper_ids[paper], paper_ids[cites]] = 1
+    grouped_reader = itertools.groupby(reader, lambda x: x[0])
+    for _, citations in grouped_reader:
+        for _, p1 in citations:
+            for _, p2 in citations:
+                if p1 != p2:
+                    S[paper_ids[p1], paper_ids[p2]] += 1
 
     S = S.tocsr()
-    S = S.dot(S.T)
 
     paper_ids = invert_dict(paper_ids)
 
