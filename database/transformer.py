@@ -58,6 +58,13 @@ def main(stage, publisher, filename, create=False, flush=False, dryrun=False, ve
     #
     # args = parser.parse_args()
     #
+
+    if stage not in STAGES:
+        raise ValueError('Stage is not valid')
+
+    if publisher not in PRODUCTS:
+        raise ValueError('Publisher is not valid')
+
     config = config_factory(stage, verbose)
 
     #still need to figure out where "storage" comes from
