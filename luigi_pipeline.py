@@ -63,26 +63,6 @@ class BibcoupleTask(luigi.Task):
                 dim = countPapers(infile)
                 outfile = bib.main(dim, self.input(), outfile, delimiter=' ')
 
-### neeed to fix ef_nx so that it works properly in this context.
-### Getting a lot of bugs still
-# class EFnxTask(luigi.task):
-#     #need to make ef_nx write to a file
-#
-#     date = luigi.DateParameter()
-#
-#     def requires(self):
-#         return AMinerParse(date = self.date)
-#
-#     def output(self):
-#         return luigi.LocalTarget(path='recs/ef_nx%s.txt' % self.date)
-#
-#     def run(self):
-#         from ef_nx import EFExpert
-#         with self.output().open('w') as outfile:
-#             with self.input().open('r') as infile:
-#                 ef = EFExpert(None)
-#                 ef.converter(infile)
-#                 ef.recommend('''paperID''')
 
 def countPapers(infile):
     distinct = set()
