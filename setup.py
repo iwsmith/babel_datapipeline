@@ -13,7 +13,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='1.0.0',
 
-    description='Datapipeline from raw files on S3 to recommends on Database',
+    description='Datapipeline from raw files on S3 to recommends in Dynamo',
 
     # The project's main homepage.
     url='https://github.com/iwsmith/babel_datapipeline',
@@ -55,5 +55,5 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['scipy', 'networkx', 'boto', 'configobj', 'luigi'],
+    install_requires=['scipy', 'networkx', 'boto', 'configobj', 'validate', 'luigi'],
 )
