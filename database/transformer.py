@@ -2,11 +2,11 @@
 
 from __future__ import print_function
 from csv import DictReader, reader
+from configobj import ConfigObj
 from storage import Storage
 from contextlib import closing
 import itertools
 from decimal import Decimal
-from config import add_prod_stage_to_parser, config_factory, PRODUCTS, STAGES
 from boto.exception import JSONResponseError
 from tree_transform import make_tree_rec, process_tree
 import uuid
@@ -42,32 +42,27 @@ def debucketer(key, value, conf):
             conf["range_key"] : Decimal(ef),
             conf["rec_attribute"] : value}
 
-def main(stage, publisher, filename, create=False, flush=False, dryrun=False, verbose=False, skip=False):
+def main(publisher, filename, create=False, flush=False, dryrun=False, verbose=False, skip=False):
     import sys
     from collections import deque
+    import os
 
-    # parser = argparse.ArgumentParser(description="Transform reccomender output to DynamoDB")
-    # parser.add_argument("stage", help="Stage to act on", choices=STAGES)
-    # parser.add_argument("publisher", help="which publisher", choices=PRODUCTS)
-    # parser.add_argument("filename", help="file to transform", type=argparse.FileType('r'))
-    # parser.add_argument("-c", "--create", help="create table in database", action="store_true")
-    # parser.add_argument("-f", "--flush", help="flush database.", action="store_true")
-    # parser.add_argument("-d", "--dryrun", help="Process data, but don't insert into DB", action="store_true")
-    # parser.add_argument("-v", "--verbose", action="store_true")
-    # parser.add_argument("-s", "--skip", help="Skip first line", action="store_true")
-    #
-    # args = parser.parse_args()
-    #
+    # the confspec could probably be removed
+    # config = ConfigObj(infile=os.path.join(os.pardir, 'configs', 'default.cfg'),
+    #                    unrepr=True, interpolation="template",
+    #                    configspec=os.path.join(os.pardir,
+    #                                            'configs', 'confspec.cfg')).dict()
 
-    if stage not in STAGES:
-        raise ValueError('Stage is not valid')
+    config = ConfigObj(infile=os.path.join(os.pardir, 'configs', 'default.cfg'),
+                               unrepr=True,
+                               interpolation="template",
+                               configspec=os.path.join(os.pardir,
+                                               'configs', 'confspec.cfg')).dict()
+    print(config)
 
     if publisher not in PRODUCTS:
         raise ValueError('Publisher is not valid')
 
-    config = config_factory(stage, verbose)
-
-    #still need to figure out where "storage" comes from
     with closing(Storage(config["storage"])) as c:
         table = c.tables[publisher]
         if flush:
@@ -107,10 +102,27 @@ def main(stage, publisher, filename, create=False, flush=False, dryrun=False, ve
                     current_time = time.time()
                     current_rate = entries/(current_time - start)
                     rate.append(current_rate)
-                    # print("\r{0} {1:.2f}e/s {2:,}@{3:.0f}s".format(sparkline.sparkify(rate).encode('utf-8'), current_rate, entries, current_time-start), end=' ')
                     sys.stdout.flush()
         end = time.time()
         print("\nProcessed {0:,} entries in {1:.0f} seconds: {2:.2f} entries/sec".format(entries, end-start, entries/(end-start)))
 
         if dryrun is False:
             table.update_throughput()
+
+if __name__ == '__main__':
+    import argparse
+
+    PRODUCTS = ("plos", "jstor", "arxiv", "pubmed", "dblp", "ssrn", "mas", "aminer")
+    parser = argparse.ArgumentParser(description="Transform reccomender output to DynamoDB")
+    parser.add_argument("publisher", help="which publisher", choices=PRODUCTS)
+    parser.add_argument("filename", help="file to transform", type=argparse.FileType('r'))
+    parser.add_argument("-c", "--create", help="create table in database", action="store_true")
+    parser.add_argument("-f", "--flush", help="flush database.", action="store_true")
+    parser.add_argument("-d", "--dryrun", help="Process data, but don't insert into DB", action="store_true")
+    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("-s", "--skip", help="Skip first line", action="store_true")
+
+    args = parser.parse_args()
+
+    main(args.publisher, args.filename, args.create, args.flush, args.dryrun, args.verbose, args.skip)
+

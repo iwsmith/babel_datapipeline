@@ -13,7 +13,7 @@ def create_hash(doi, rec_type):
     return "|".join((doi, rec_type))
 
 class Table():
-    def __init__(self, connection, max_results, table_name, hash_key, range_key, rec_attribute, rec_types, product):
+    def __init__(self, connection, max_results, table_name, hash_key, range_key, rec_attribute, rec_types, publisher):
         self.table_name = table_name
         self.hash_key = hash_key
         self.range_key = range_key
@@ -22,7 +22,7 @@ class Table():
         self.connection = connection
         self.max_results = max_results
         self.table = boto.dynamodb2.table.Table(table_name, connection=connection)
-        self.publisher = product
+        self.publisher = publisher
 
     def create(self, read=5, write=5):
         return self.table.create(self.table_name,
@@ -167,7 +167,7 @@ class Storage():
 
         self.conf = storage_conf
         self.max_results = storage_conf["max_results"]
-        self.products = self.conf["products"]
+        self.publishers = self.conf["publishers"]
 
         if self.conf["region"] == "localhost":
             from boto.dynamodb2.layer1 import DynamoDBConnection
@@ -181,7 +181,7 @@ class Storage():
             self.connection = boto.dynamodb2.connect_to_region(self.conf["region"])
 
         self.tables = dict()
-        for prod in self.products:
+        for prod in self.publishers:
             self.tables[prod] = Table(self.connection, max_results=self.max_results, **self.conf[prod])
 
     def close(self):
