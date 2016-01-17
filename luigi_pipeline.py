@@ -63,6 +63,17 @@ class BibcoupleTask(luigi.Task):
                 dim = countPapers(infile)
                 outfile = bib.main(dim, self.input(), outfile, delimiter=' ')
 
+class DynamoOutputTask(luigi.Task):
+
+    date = luigi.DateParameter()
+
+    def requires(self):
+        return BibcoupleTask(date = self.date)
+
+    def run(self):
+        from database.transformer import main
+        #main('aminer',create=True,flush=True)
+
 
 def countPapers(infile):
     distinct = set()
