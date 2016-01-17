@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from csv import DictReader, reader
 from configobj import ConfigObj
 from storage import Storage
 from contextlib import closing
@@ -9,7 +8,6 @@ import itertools
 from decimal import Decimal
 from boto.exception import JSONResponseError
 from tree_transform import make_tree_rec, process_tree
-import uuid
 import time
 import logging
 
@@ -42,25 +40,28 @@ def debucketer(key, value, conf):
             conf["range_key"] : Decimal(ef),
             conf["rec_attribute"] : value}
 
+def get_configs():
+    import os
+    from validate import Validator
+
+    vtor = Validator()
+    config = ConfigObj(infile=os.path.join(os.pardir, 'configs', 'default.cfg'),
+                       unrepr=True, interpolation="template",
+                       configspec=os.path.join(os.pardir,
+                                               'configs', 'confspec.cfg'))
+    config.validate(vtor)
+    config = config.dict()
+    print(config)
+    return(config)
+
 def main(publisher, filename, create=False, flush=False, dryrun=False, verbose=False, skip=False):
     import sys
     from collections import deque
-    import os
+    from csv import reader
 
-    # the confspec could probably be removed
-    # config = ConfigObj(infile=os.path.join(os.pardir, 'configs', 'default.cfg'),
-    #                    unrepr=True, interpolation="template",
-    #                    configspec=os.path.join(os.pardir,
-    #                                            'configs', 'confspec.cfg')).dict()
+    config = get_configs()
 
-    config = ConfigObj(infile=os.path.join(os.pardir, 'configs', 'default.cfg'),
-                               unrepr=True,
-                               interpolation="template",
-                               configspec=os.path.join(os.pardir,
-                                               'configs', 'confspec.cfg')).dict()
-    print(config)
-
-    if publisher not in PRODUCTS:
+    if publisher not in config['storage']['publishers']:
         raise ValueError('Publisher is not valid')
 
     with closing(Storage(config["storage"])) as c:
