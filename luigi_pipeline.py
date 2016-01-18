@@ -4,8 +4,6 @@ import luigi
 import luigi.s3 as s3
 
 import parsers.aminer as am
-import recommenders.bibcouple as bib
-import recommenders.cocitation as cocite
 
 class LocalTargetInputs(luigi.ExternalTask):
     def output(self):
@@ -14,13 +12,13 @@ class LocalTargetInputs(luigi.ExternalTask):
 class AminerS3Targets(luigi.Task):
     def output(self):
         s3client = s3.S3Client()
-        return s3.S3Target(path='s3://citation-databases/Aminer/raw/aminer.paper.gz', client=s3client)
+        return s3.S3Target(path='S3://citation-databases/Aminer/raw/aminer.paper.gz', client=s3client)
 
 class AMinerParse(luigi.Task):
     date = luigi.DateParameter()
 
     def requires(self):
-        return LocalTargetInputs()
+        return AminerS3Targets()
 
     def output(self):
         return luigi.LocalTarget(path='citation_dict/aminer_parse_%s.txt' % self.date)
@@ -43,10 +41,13 @@ class CocitationTask(luigi.Task):
         return luigi.LocalTarget(path='recs/cocitation_%s.txt' % self.date)
 
     def run(self):
+        import recommenders.cocitation as cocite
         with self.output().open('w') as outfile:
-            with self.input().open('r') as infile:
+            with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
-                outfile = cocite.main(dim, infile, outfile, delimiter=' ')
+                outString = cocite.main(dim, self.input().path, open(self.output().path, 'w'),
+                                        delimiter=' ', numRecs=-1)
+                outfile.write(outString)
 
 class BibcoupleTask(luigi.Task):
     date = luigi.DateParameter()
@@ -58,10 +59,13 @@ class BibcoupleTask(luigi.Task):
         return luigi.LocalTarget(path='recs/bibcouple%s.txt' % self.date)
 
     def run(self):
+        import recommenders.bibcouple as bib
         with self.output().open('w') as outfile:
-            with self.input().open('r') as infile:
+            with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
-                outfile = bib.main(dim, self.input(), outfile, delimiter=' ')
+                outString = bib.main(dim, self.input().path, open(self.output().path, 'w'),
+                                     delimiter=' ', numRecs=-1)
+                outfile.write(outString)
 
 class DynamoOutputTask(luigi.Task):
     date = luigi.DateParameter()
