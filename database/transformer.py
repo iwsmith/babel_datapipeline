@@ -45,19 +45,25 @@ def get_configs():
     from validate import Validator
 
     vtor = Validator()
-    config = ConfigObj(infile=os.path.join(os.pardir, 'configs', 'default.cfg'),
-                       unrepr=True, interpolation="template",
-                       configspec=os.path.join(os.pardir,
-                                               'configs', 'confspec.cfg'))
+    # config = ConfigObj(infile=os.path.join(os.pardir, 'configs', 'default.cfg'),
+    #                    unrepr=True, interpolation="template",
+    #                    configspec=os.path.join(os.pardir,
+    #                                            'configs', 'confspec.cfg'))
+    config = ConfigObj(infile='/Users/rohana/Documents/repos/babel_datapipeline/configs/default.cfg',
+                   unrepr=True, interpolation="template",
+                   configspec='/Users/rohana/Documents/repos/babel_datapipeline/configs/confspec.cfg')
+
     config.validate(vtor)
     config = config.dict()
-    print(config)
+    # print(config)
     return(config)
 
 def main(publisher, filename, create=False, flush=False, dryrun=False, verbose=False, skip=False):
     import sys
     from collections import deque
     from csv import reader
+
+    print(filename)
 
     config = get_configs()
 

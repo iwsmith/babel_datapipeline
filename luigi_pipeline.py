@@ -64,7 +64,6 @@ class BibcoupleTask(luigi.Task):
                 outfile = bib.main(dim, self.input(), outfile, delimiter=' ')
 
 class DynamoOutputTask(luigi.Task):
-
     date = luigi.DateParameter()
 
     def requires(self):
@@ -72,7 +71,7 @@ class DynamoOutputTask(luigi.Task):
 
     def run(self):
         from database.transformer import main
-        #main('aminer',create=True,flush=True)
+        main('aminer', open(self.input().path, 'r'), create=True,flush=True)
 
 
 def countPapers(infile):
