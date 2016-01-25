@@ -1,6 +1,6 @@
 import luigi
 
-from recommenders import bibcouple as bib
+from babel_datapipeline.recommenders import bibcouple as bib
 
 if __name__ == "__main__":
 
