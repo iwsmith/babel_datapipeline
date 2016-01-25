@@ -2,8 +2,7 @@
 
 import luigi
 import luigi.s3 as s3
-
-import parsers.aminer as am
+from babel_util.parsers import aminer
 
 class LocalTargetInputs(luigi.ExternalTask):
     def output(self):
@@ -25,7 +24,7 @@ class AMinerParse(luigi.Task):
         return luigi.LocalTarget(path='citation_dict/aminer_parse_%s.txt' % self.date)
 
     def run(self):
-        p = am.AMinerParser()
+        p = aminer.AMinerParser()
         with self.output().open('w') as outfile:
             with self.input().open('r') as infile:
                 for paper in p.parse(infile):
@@ -42,11 +41,11 @@ class CocitationTask(luigi.Task):
         return luigi.LocalTarget(path='recs/cocitation_%s.txt' % self.date)
 
     def run(self):
-        import recommenders.cocitation as cocite
+        from babel_util.recommenders import cocitation
         with self.output().open('w') as outfile:
             with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
-                outString = cocite.main(dim, self.input().path, open(self.output().path, 'w'),
+                outString = cocitation.main(dim, self.input().path, open(self.output().path, 'w'),
                                         delimiter=' ', numRecs=-1)
                 outfile.write(outString)
 
@@ -60,11 +59,11 @@ class BibcoupleTask(luigi.Task):
         return luigi.LocalTarget(path='recs/bibcouple%s.txt' % self.date)
 
     def run(self):
-        import recommenders.bibcouple as bib
+        from babel_util.recommenders import bibcouple
         with self.output().open('w') as outfile:
             with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
-                outString = bib.main(dim, self.input().path, open(self.output().path, 'w'),
+                outString = bibcouple.main(dim, self.input().path, open(self.output().path, 'w'),
                                      delimiter=' ', numRecs=-1)
                 outfile.write(outString)
 

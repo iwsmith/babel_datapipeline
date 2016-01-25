@@ -41,17 +41,13 @@ def debucketer(key, value, conf):
             conf["rec_attribute"] : value}
 
 def get_configs():
-    import os
+    import os, babel_datapipeline
     from validate import Validator
 
     vtor = Validator()
-    # config = ConfigObj(infile=os.path.join(os.pardir, 'configs', 'default.cfg'),
-    #                    unrepr=True, interpolation="template",
-    #                    configspec=os.path.join(os.pardir,
-    #                                            'configs', 'confspec.cfg'))
-    config = ConfigObj(infile='/Users/rohana/Documents/repos/babel_datapipeline/configs/default.cfg',
+    config = ConfigObj(infile=os.path.join(babel_datapipeline.__path__[0], 'configs', 'default.cfg'),
                    unrepr=True, interpolation="template",
-                   configspec='/Users/rohana/Documents/repos/babel_datapipeline/configs/confspec.cfg')
+                   configspec=os.path.join(babel_datapipeline.__path__[0], 'configs', 'confspec.cfg'))
 
     config.validate(vtor)
     config = config.dict()
