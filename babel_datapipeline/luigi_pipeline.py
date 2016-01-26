@@ -42,12 +42,11 @@ class CocitationTask(luigi.Task):
 
     def run(self):
         from babel_util.recommenders import cocitation
-        with self.output().open('w') as outfile:
+        with open(self.output().path, 'w') as outfile:
             with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
-                outString = cocitation.main(dim, self.input().path, open(self.output().path, 'w'),
+                cocitation.main(dim, outfile, infile,
                                         delimiter=' ', numRecs=-1)
-                outfile.write(outString)
 
 class BibcoupleTask(luigi.Task):
     date = luigi.DateParameter()
@@ -60,12 +59,11 @@ class BibcoupleTask(luigi.Task):
 
     def run(self):
         from babel_util.recommenders import bibcouple
-        with self.output().open('w') as outfile:
+        with open(self.output().path, 'w') as outfile:
             with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
-                outString = bibcouple.main(dim, self.input().path, open(self.output().path, 'w'),
+                bibcouple.main(dim, outfile, infile,
                                      delimiter=' ', numRecs=-1)
-                outfile.write(outString)
 
 class DynamoOutputTask(luigi.Task):
     date = luigi.DateParameter()
