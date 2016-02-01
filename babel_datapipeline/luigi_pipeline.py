@@ -1,5 +1,3 @@
-# In order to run with luigi command, this folder must be added to sys.path
-
 import luigi
 import luigi.s3 as s3
 from babel_util.parsers import aminer
@@ -15,28 +13,6 @@ class AminerS3Targets(luigi.Task):
         s3client = s3.S3Client()
         gformat = luigi.format.GzipFormat()
         return s3.S3Target(path='S3://citation-databases/Aminer/raw/aminer.paper.gz', format=gformat, client=s3client)
-
-
-class PajekFactory(luigi.Task):
-    date = luigi.DateParameter()
-
-    def requires(self):
-        return AminerS3Targets()
-
-    def output(self):
-        return luigi.LocalTarget(path='pajek_database/aminer_pajek_%s.txt' % self.date)
-
-    def run(self):
-        from babel_util.util.PajekFactory import PajekFactory
-
-        pjk = PajekFactory()
-
-        with open(self.output().path, 'w') as outfile:
-            with open(self.input().path, 'r') as infile:
-                for edge in infile:
-                    vertices = edge.split(' ')  # TODO add global for delimiter
-                    pjk.add_edge(vertices[0], vertices[1])
-                pjk.write(outfile)
 
 
 class AMinerParse(luigi.Task):
@@ -57,11 +33,33 @@ class AMinerParse(luigi.Task):
                         outfile.write("{0} {1}\n".format(paper["id"], citation))
 
 
+class PajekFactory(luigi.Task):
+    date = luigi.DateParameter()
+
+    def requires(self):
+        return AMinerParse(date=self.date)
+
+    def output(self):
+        return luigi.LocalTarget(path='pajek_database/aminer_pajek_%s.txt' % self.date)
+
+    def run(self):
+        from babel_util.util.PajekFactory import PajekFactory
+
+        pjk = PajekFactory()
+
+        with open(self.output().path, 'w') as outfile:
+            with open(self.input().path, 'r') as infile:
+                for edge in infile:
+                    vertices = edge.strip().split(' ')  # TODO add global for delimiter
+                    pjk.add_edge(vertices[0], vertices[1])
+                pjk.write(outfile)
+
+
 class CocitationTask(luigi.Task):
     date = luigi.DateParameter()
 
     def requires(self):
-        return AMinerParse(date = self.date)
+        return AMinerParse(date=self.date)
 
     def output(self):
         return luigi.LocalTarget(path='recs/cocitation_%s.txt' % self.date)
@@ -72,14 +70,14 @@ class CocitationTask(luigi.Task):
             with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
                 cocitation.main(dim, outfile, infile,
-                                        delimiter=' ', numRecs=-1)
+                                delimiter=' ', numRecs=-1)
 
 
 class BibcoupleTask(luigi.Task):
     date = luigi.DateParameter()
 
     def requires(self):
-        return AMinerParse(date = self.date)
+        return AMinerParse(date=self.date)
 
     def output(self):
         return luigi.LocalTarget(path='recs/bibcouple%s.txt' % self.date)
@@ -90,14 +88,14 @@ class BibcoupleTask(luigi.Task):
             with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
                 bibcouple.main(dim, outfile, infile,
-                                     delimiter=' ', numRecs=-1)
+                               delimiter=' ', numRecs=-1)
 
 
 class DynamoOutputTask(luigi.Task):
     date = luigi.DateParameter()
 
     def requires(self):
-        return BibcoupleTask(date = self.date)
+        return BibcoupleTask(date=self.date)
 
     def run(self):
         from database.transformer import main
