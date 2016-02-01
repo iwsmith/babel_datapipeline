@@ -4,15 +4,40 @@ import luigi
 import luigi.s3 as s3
 from babel_util.parsers import aminer
 
+
 class LocalTargetInputs(luigi.ExternalTask):
     def output(self):
         return luigi.file.LocalTarget(path='local_raw_targets/aminer.paper')
+
 
 class AminerS3Targets(luigi.Task):
     def output(self):
         s3client = s3.S3Client()
         gformat = luigi.format.GzipFormat()
         return s3.S3Target(path='S3://citation-databases/Aminer/raw/aminer.paper.gz', format=gformat, client=s3client)
+
+
+class PajekFactory(luigi.Task):
+    date = luigi.DateParameter()
+
+    def requires(self):
+        return AminerS3Targets()
+
+    def output(self):
+        return luigi.LocalTarget(path='pajek_database/aminer_pajek_%s.txt' % self.date)
+
+    def run(self):
+        from babel_util.util.PajekFactory import PajekFactory
+
+        pjk = PajekFactory()
+
+        with open(self.output().path, 'w') as outfile:
+            with open(self.input().path, 'r') as infile:
+                for edge in infile:
+                    vertices = edge.split(' ')  # TODO add global for delimiter
+                    pjk.add_edge(vertices[0], vertices[1])
+                pjk.write(outfile)
+
 
 class AMinerParse(luigi.Task):
     date = luigi.DateParameter()
@@ -31,6 +56,7 @@ class AMinerParse(luigi.Task):
                     for citation in paper["citations"]:
                         outfile.write("{0} {1}\n".format(paper["id"], citation))
 
+
 class CocitationTask(luigi.Task):
     date = luigi.DateParameter()
 
@@ -48,6 +74,7 @@ class CocitationTask(luigi.Task):
                 cocitation.main(dim, outfile, infile,
                                         delimiter=' ', numRecs=-1)
 
+
 class BibcoupleTask(luigi.Task):
     date = luigi.DateParameter()
 
@@ -64,6 +91,7 @@ class BibcoupleTask(luigi.Task):
                 dim = countPapers(infile)
                 bibcouple.main(dim, outfile, infile,
                                      delimiter=' ', numRecs=-1)
+
 
 class DynamoOutputTask(luigi.Task):
     date = luigi.DateParameter()
