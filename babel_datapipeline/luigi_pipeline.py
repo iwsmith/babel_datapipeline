@@ -40,7 +40,7 @@ class PajekFactory(luigi.Task):
         return AMinerParse(date=self.date)
 
     def output(self):
-        return luigi.LocalTarget(path='pajek_database/aminer_pajek_%s.txt' % self.date)
+        return luigi.LocalTarget(path='pajek_files/aminer_pajek_%s.net' % self.date)
 
     def run(self):
         from babel_util.util.PajekFactory import PajekFactory
@@ -53,6 +53,24 @@ class PajekFactory(luigi.Task):
                     vertices = edge.strip().split(' ')  # TODO add global for delimiter
                     pjk.add_edge(vertices[0], vertices[1])
                 pjk.write(outfile)
+
+
+class InfomapTask(luigi.Task):
+    date = luigi.DateParameter()
+
+    def requires(self):
+        return PajekFactory(date=self.date)
+
+    def output(self):
+        return luigi.LocalTarget(path='dummy%s.txt' % self.date)
+
+    def run(self):
+        from subprocess import check_call, STDOUT
+        infomap_loc = 'Infomap'
+        infile_loc = self.input().path
+        outfolder_loc = 'infomap_output/'
+        infomap_options = '--tree --map --bftree -t -N 1'
+        check_call('%s %s %s %s' % (infomap_loc, infile_loc, outfolder_loc, infomap_options), stderr=STDOUT, shell=True)
 
 
 class CocitationTask(luigi.Task):
@@ -70,7 +88,7 @@ class CocitationTask(luigi.Task):
             with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
                 cocitation.main(dim, outfile, infile,
-                                delimiter=' ', numRecs=-1)
+                                delimiter=' ')
 
 
 class BibcoupleTask(luigi.Task):
@@ -88,7 +106,7 @@ class BibcoupleTask(luigi.Task):
             with open(self.input().path, 'r') as infile:
                 dim = countPapers(infile)
                 bibcouple.main(dim, outfile, infile,
-                               delimiter=' ', numRecs=-1)
+                               delimiter=' ')
 
 
 class DynamoOutputTask(luigi.Task):

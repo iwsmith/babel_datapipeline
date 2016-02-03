@@ -59,6 +59,12 @@ target/
 # luigi
 *.txt
 
+# Infomap
+.net
+.tree
+.bftree
+.map
+
 #PyCharm
 .DS_Store
 .idea
