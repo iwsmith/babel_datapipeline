@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
 from os import path
+import pip
 
 here = path.abspath(path.dirname(__file__))
 
@@ -57,3 +58,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['scipy', 'networkx', 'boto', 'configobj', 'luigi', 'babel_util'],
 )
+
+with open('requirements.txt', 'r') as f:
+    for line in f:
+        pip.main(['install', line])
