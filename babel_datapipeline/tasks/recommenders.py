@@ -1,3 +1,4 @@
+import luigi
 from parsers import *
 from infomap import *
 from babel_datapipeline.util.misc import countnodes

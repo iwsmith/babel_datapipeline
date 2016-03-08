@@ -43,3 +43,11 @@ class InfomapTask(luigi.Task):
         infomap_options = '--tree --map --bftree -t -N 1'
         check_call('%s %s %s %s' % (infomap_loc, infile_loc, outfolder_loc, infomap_options),
                    stderr=STDOUT, shell=True)
+
+        import os
+        print(os.listdir(os.getcwd() + '/infomap_output'))
+        s3client = s3.S3Client()
+        s3client.put('infomap_output/aminer_pajek_%s.bftree' % self.date,
+                     'S3://babel-processing/aminer_pajek_%s.bftree' % self.date)
+        s3client.put('infomap_output/aminer_pajek_%s.map' % self.date,
+                     'S3://babel-processing/aminer_pajek_%s.map' % self.date)
