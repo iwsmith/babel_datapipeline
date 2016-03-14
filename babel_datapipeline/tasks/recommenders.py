@@ -1,7 +1,7 @@
 import luigi
-from parsers import *
-from infomap import *
-from babel_datapipeline.util.misc import countnodes
+from babel_datapipeline.tasks.parsers import *
+from babel_datapipeline.tasks.infomap import *
+from babel_datapipeline.util.misc import *
 
 
 class CocitationTask(luigi.Task):
@@ -11,6 +11,7 @@ class CocitationTask(luigi.Task):
         return AMinerParse(date=self.date)
 
     def output(self):
+        makedir('recs')
         return luigi.LocalTarget(path='recs/cocitation_%s.txt' % self.date)
 
     def run(self):
@@ -29,6 +30,7 @@ class BibcoupleTask(luigi.Task):
         return AMinerParse(date=self.date)
 
     def output(self):
+        makedir('recs')
         return luigi.LocalTarget(path='recs/bibcouple_%s.txt' % self.date)
 
     def run(self):
@@ -47,6 +49,7 @@ class EFTask(luigi.Task):
         return InfomapTask(date=self.date)
 
     def output(self):
+        makedir('recs')
         return (luigi.LocalTarget(path='recs/ef_classic_%s.txt' % self.date),
                 luigi.LocalTarget(path='recs/ef_expert_%s.txt' % self.date))
 
@@ -56,3 +59,5 @@ class EFTask(luigi.Task):
             with open(self.output()[1].path, 'w') as expert:
                 with open(self.input()[0].path, 'r') as infile:
                     ef.main(infile, classic, expert)
+
+

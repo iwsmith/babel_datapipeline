@@ -1,6 +1,7 @@
 import datetime
 import luigi
 from io import *
+from babel_datapipeline.util.misc import *
 
 
 class AMinerParse(luigi.Task):
@@ -10,6 +11,7 @@ class AMinerParse(luigi.Task):
         return AminerS3Targets()
 
     def output(self):
+        makedir('citation_dict')
         return luigi.LocalTarget(path='citation_dict/aminer_parse_%s.txt' % self.date)
 
     def run(self):
