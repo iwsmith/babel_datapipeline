@@ -39,7 +39,8 @@ class InfomapTask(luigi.Task):
 
     def output(self):
         makedir(self.outfolder_loc)
-        return (luigi.LocalTarget(path='%s_%s.tree.gz' % (self.generic_path, self.date)),
+        gformat = luigi.format.GzipFormat()
+        return (luigi.LocalTarget(path='%s_%s.tree.gz' % (self.generic_path, self.date), format=gformat),
                 luigi.LocalTarget(path='%s_%s.bftree.gz' % (self.generic_path, self.date)),
                 luigi.LocalTarget(path='%s_%s.map.gz' % (self.generic_path, self.date)))
 

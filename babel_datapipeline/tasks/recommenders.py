@@ -55,9 +55,10 @@ class EFTask(luigi.Task):
 
     def run(self):
         from babel_util.recommenders import ef
+        from babel_util.util.misc import open_file
         with open(self.output()[0].path, 'w') as classic:
             with open(self.output()[1].path, 'w') as expert:
-                with open(self.input()[0].path, 'r') as infile:
+                with open_file(self.input()[0].path, 'r') as infile:
                     ef.main(infile, classic, expert)
 
 
